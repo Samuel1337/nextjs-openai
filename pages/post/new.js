@@ -4,20 +4,45 @@ import { useState } from "react";
 import Markdown from 'react-markdown';
 
 export default function NewPost(props) {
+    const [topic, setTopic] = useState("");
+    const [keywords, setKeywords] = useState("");
     const [postContent, setPostContent] = useState("");
-    const handleClick = async () => {
+    const handleClick = async (e) => {
+        e.preventDefault();
         const response = await fetch("/api/generatePost", {
-            method: "POST"
+            method: "POST",
+            headers: {
+                'content-type': 'application/json'
+            },
+            body: JSON.stringify({topic, keywords}),
         });
         const json = await response.json();
-        setPostContent(json.postContent);
+        console.log("json: " + JSON.stringify(json));
+        setPostContent(json.post.postContent);
     }
     return (
         <div>
-            <h1>This is the new post page</h1>
-            <button className="btn" onClick={handleClick}>
-                Generate
-            </button>
+            <form onSubmit={handleClick}>
+                <div>
+                    <label><strong>Generate a blog post on the topic of:</strong></label>
+                    <textarea
+                        className="resize-none border border-slate-500 w-full block my-2 px-4 py-2 rounded-sm"
+                        value={topic}
+                        onChange={(e) => setTopic(e.target.value)}
+                        />
+                </div>
+                <div>
+                    <label><strong>Targeting the following keyowrds:</strong></label>
+                    <textarea
+                        className="resize-none border border-slate-500 w-full block my-2 px-4 py-2 rounded-sm"
+                        value={keywords}
+                        onChange={(e) => setKeywords(e.target.value)}
+                    />
+                </div>
+                <button className="btn" type="submit">
+                    Generate
+                </button>
+            </form>
             <Markdown>
                 {postContent}
             </Markdown>
