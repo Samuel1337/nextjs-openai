@@ -53,12 +53,7 @@ export default withApiAuthRequired(async function handler(req, res) {
       {
         role: "system",
         content: `
-        You are an SEO friendly blog post generator called BlogStandard. You are designed to output json. Do not include HTML tags in your output.
-        The output json must be in the following format:
-          {
-            title: "example title",
-            metaDescription: "example meta description",
-          }
+        You are an SEO friendly blog post generator called BlogStandard. You are designed to output JSON. Do not include HTML tags in your output.
         `,
       },
       {
@@ -68,12 +63,18 @@ export default withApiAuthRequired(async function handler(req, res) {
           ---
           ${postContent}
           ---
+          The output JSON must be in the following format:
+          {title:"example title",metaDescription:"example meta description"}
+          Your turn:
+          {
         `
       },
     ],
     response_format: {type: "json_object"},
   });
-  const {title, metaDescription} = seoResponse.data.choices[0]?.message?.content || {};
+
+  const jsonSeoResponse = JSON.parse(seoResponse.data.choices[0]?.message?.content);
+  const {title, metaDescription} = jsonSeoResponse || {};
 
   await db.collection("users").updateOne({
     auth0Id: user.sub
