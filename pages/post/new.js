@@ -19,14 +19,14 @@ export default function NewPost(props) {
             body: JSON.stringify({topic, keywords}),
         });
         const json = await response.json();
-        console.log("json: " + JSON.stringify(json));
+        // console.log("json: " + JSON.stringify(json));
         if (json?.postId) {
             router.push(`/post/${json.postId}`);
         }
     }
     return (
         <div>
-            <form onSubmit={handleClick}>
+            <form className="p-6" onSubmit={handleClick}>
                 <div>
                     <label><strong>Generate a blog post on the topic of:</strong></label>
                     <textarea

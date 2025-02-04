@@ -1,28 +1,31 @@
-import { getSession, withApiAuthRequired } from "@auth0/nextjs-auth0";
 import { OpenAIApi, Configuration } from "openai";
 import clientPromise from "../../lib/mongodb";
+import { getSession, withApiAuthRequired } from "@auth0/nextjs-auth0";
 
 export default withApiAuthRequired(async function handler(req, res) {
+  
+  // authorize user to access database with auth0
   const {user} = await getSession(req, res);
   const client = await clientPromise;
   const db = client.db("BlogStandard");
   const userProfile = await db.collection("users").findOne({
     auth0Id: user.sub
   })
-
   if (!userProfile?.availableTokens) {
     res.status(403);
     return;
   }
 
+  // get blog title and keywords from user input
   const {topic, keywords} = req.body;
   
+  // connect to OpenAI
   const config = new Configuration({
     apiKey: process.env.OPENAI_API_KEY,
   });
-  
   const openai = new OpenAIApi(config);
   
+  // generate blog post
   const response = await openai.createChatCompletion({
     model: "gpt-3.5-turbo-1106",
     messages: [
@@ -44,9 +47,11 @@ export default withApiAuthRequired(async function handler(req, res) {
           `
         },
       ],
-    });
-    
+    });  
   const postContent = response.data.choices[0]?.message?.content;
+  console.log(response)
+  
+  // generate meta-title and meta-description
   const seoResponse = await openai.createChatCompletion({
     model: "gpt-3.5-turbo-1106",
     messages: [
@@ -72,10 +77,10 @@ export default withApiAuthRequired(async function handler(req, res) {
     ],
     response_format: {type: "json_object"},
   });
-
   const jsonSeoResponse = JSON.parse(seoResponse.data.choices[0]?.message?.content);
   const {title, metaDescription} = jsonSeoResponse || {};
 
+  // spend 1 token from user profile on database
   await db.collection("users").updateOne({
     auth0Id: user.sub
   }, {
@@ -84,6 +89,7 @@ export default withApiAuthRequired(async function handler(req, res) {
     }
   })
 
+  // return generated blog post, meta-title, and meta-description as json
   const post = await db.collection("posts").insertOne({
     postContent,
     title,
@@ -94,6 +100,7 @@ export default withApiAuthRequired(async function handler(req, res) {
     created: new Date(),
   })
 
+  // return 200 OK with postId
   res.status(200).json({
     postId: post.insertedId,
   });

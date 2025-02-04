@@ -8,7 +8,7 @@ import { Logo } from "../Logo/Logo";
 export const AppLayout = ({children, availableTokens, posts, postId}) => {
     const {user} = useUser();
 
-    console.log("posts:", posts);
+    // console.log("posts:", posts);
 
     return (
         <div className="grid grid-cols-[300px_1fr] h-screen max-h-screen">
